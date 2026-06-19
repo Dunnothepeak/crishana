@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crishana 🍼</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a0a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Press Start 2P', monospace;
+    background-image: radial-gradient(ellipse at center, #2d1b4e 0%, #1a0a2e 70%);
+    padding: 24px 12px;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  body::before {
+    content: '✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧';
+    position: fixed;
+    top: 10px;
+    left: 0; right: 0;
+    text-align: center;
+    color: #ffffff22;
+    font-size: 20px;
+    letter-spacing: 20px;
+    pointer-events: none;
+  }
+
+  .device-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transform: scale(var(--tama-scale, 1));
+    transform-origin: center center;
+  }
+
+  .device-name {
+    color: #ff9de2;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px #ff9de288;
+  }
+
+  /* Tamagotchi shell */
+  .shell {
+    width: 280px;
+    background: linear-gradient(145deg, #ffb3e6, #ff85c8, #e55fa0);
+    border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+    padding: 24px 20px 46px;
+    position: relative;
+    box-shadow:
+      0 0 0 4px #c23d7a,
+      0 8px 32px #c23d7a88,
+      inset 0 2px 8px #ffffff44,
+      inset 0 -4px 12px #c23d7a44;
+  }
+
+  /* Chain hole */
+  .chain-hole {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    background: #c23d7a;
+    border-radius: 50%;
+    border: 3px solid #1a0a2e;
+    box-shadow: 0 0 0 2px #c23d7a;
+    z-index: 3;
+  }
+
+  /* Ribbon swirl accent, echoes the box-art swoosh */
+  .shell::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: -2px;
+    width: 70px;
+    height: 130px;
+    background:
+      repeating-linear-gradient(
+        100deg,
+        #ffffff33 0px,
+        #ffffff33 3px,
+        transparent 3px,
+        transparent 14px
+      );
+    border-radius: 50% 0 0 50% / 60% 0 0 60%;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Screen bezel */
+  .screen-bezel {
+    background: #2a1535;
+    border-radius: 16px;
+    padding: 6px;
+    border: 3px solid #c23d7a;
+    box-shadow: inset 0 2px 8px #000a, 0 0 12px #ff85c844;
+    position: relative;
+    z-index: 3;
+  }
+
+  .screen {
+    background: #ffffff;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    min-height: 190px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 8px 6px 8px;
+    image-rendering: pixelated;
+  }
+
+  /* scanline effect */
+  .screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      #00000006 3px,
+      #00000006 4px
+    );
+    pointer-events: none;
+    border-radius: 10px;
+  }
+
+  .screen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    font-size: 5px;
+    color: #c23d7a;
+    flex-shrink: 0;
+  }
+
+  .sprite-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    height: 80px;
+    flex-shrink: 0;
+  }
+
+  .sprite {
+    width: 72px;
+    height: 72px;
+    image-rendering: pixelated;
+    display: none;
+    transition: transform 0.1s;
+    filter: drop-shadow(0 2px 4px #00000033);
+  }
+
+  .sprite.active { display: block; }
+
+  /* bounce animation */
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  .anim-bounce { animation: bounce 0.8s ease-in-out infinite; }
+  .anim-wobble { animation: wobble 0.5s ease-in-out infinite; }
+  .anim-shake  { animation: shake 0.3s ease-in-out infinite; }
+  .anim-pulse  { animation: pulse 1s ease-in-out infinite; }
+
+  /* floating hearts / z's */
+  .floaties {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .floaty {
+    position: absolute;
+    font-size: 12px;
+    animation: floatUp 2s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(0.5); }
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+    font-size: 4.5px;
+    color: #a8408a;
+    flex-shrink: 0;
+    padding: 0 2px;
+  }
+  .stat-row { display: flex; align-items: center; gap: 4px; }
+  .stat-label { width: 30px; flex-shrink: 0; font-size: 4px; }
+  .stat-bar {
+    flex: 1;
+    height: 5px;
+    background: #f0d8e8;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid #e0a8cc;
+    min-width: 0;
+  }
+  .stat-fill {
+    height: 100%;
+    background: #ff85c8;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .stat-fill.low { background: #c23d7a; }
+
+  /* Status message */
+  .status-msg {
+    font-size: 4.5px;
+    color: #a8408a;
+    text-align: center;
+    min-height: 10px;
+    line-height: 1.6;
+    font-family: 'Press Start 2P', monospace;
+    flex-shrink: 0;
+    width: 100%;
+    word-break: break-word;
+  }
+
+  /* Buttons */
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .btn {
+    width: clamp(42px, 13vw, 52px);
+    height: clamp(42px, 13vw, 52px);
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    transition: transform 0.1s, box-shadow 0.1s;
+    font-family: 'Press Start 2P', monospace;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(0.9) translateY(2px); }
+
+  .btn-a {
+    background: linear-gradient(145deg, #ffe066, #ffcc00);
+    box-shadow: 0 4px 0 #b8900a, 0 4px 12px #ffcc0066;
+    color: #7a5a00;
+  }
+  .btn-b {
+    background: linear-gradient(145deg, #a8f0a0, #6de060);
+    box-shadow: 0 4px 0 #3a8a30, 0 4px 12px #6de06066;
+    color: #1a5016;
+  }
+  .btn-c {
+    background: linear-gradient(145deg, #ffb3e6, #ff85c8);
+    box-shadow: 0 4px 0 #c23d7a, 0 4px 12px #ff85c866;
+    color: #7a1550;
+  }
+
+  .btn-label {
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 5px;
+    color: #ffffffb0;
+    white-space: nowrap;
+    font-family: 'Press Start 2P', monospace;
+    text-shadow: 0 1px 2px #c23d7a88;
+  }
+
+  /* Age/poop indicator */
+  .age-tag {
+    font-size: 5px;
+    color: #2d6e2a;
+  }
+
+  /* Poop emoji on screen */
+  .poop-layer {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    display: none;
+    animation: pulse 1s infinite;
+  }
+
+  /* Action menu */
+  .menu {
+    position: absolute;
+    inset: 0;
+    background: #fffffff2;
+    border-radius: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    z-index: 10;
+    padding: 8px;
+  }
+  .menu.open { display: flex; }
+  .menu-item {
+    background: none;
+    border: 2px solid #c23d7a;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 5.5px;
+    color: #a8408a;
+    cursor: pointer;
+    width: 90%;
+    text-align: center;
+    transition: background 0.1s;
+  }
+  .menu-item:hover, .menu-item.selected {
+    background: #ff85c8;
+    color: #ffffff;
+  }
+  .menu-title {
+    font-size: 6px;
+    color: #c23d7a;
+    margin-bottom: 2px;
+  }
+
+  /* Notification flash */
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .alert-dot {
+    width: 6px; height: 6px;
+    background: #c23d7a;
+    border-radius: 50%;
+    animation: flash 1s infinite;
+    display: none;
+  }
+  .alert-dot.on { display: inline-block; }
+
+  /* Decorations on shell */
+  .deco {
+    position: absolute;
+    font-size: 13px;
+    opacity: 0.55;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 1px #ffffff66);
+    z-index: 2;
+  }
+  .deco-1 { top: 16px; left: 14px; font-size: 12px; transform: rotate(-12deg); }
+  .deco-2 { top: 18px; right: 14px; font-size: 11px; transform: rotate(10deg); }
+  .deco-3 { bottom: 36px; left: 8px; font-size: 10px; transform: rotate(-8deg); }
+  .deco-4 { bottom: 36px; right: 8px; font-size: 10px; transform: rotate(8deg); }
+  .deco-5 { top: 50px; left: 4px; font-size: 9px; opacity: 0.45; transform: rotate(-15deg); }
+  .deco-6 { top: 54px; right: 6px; font-size: 9px; opacity: 0.45; transform: rotate(18deg); }
+  .deco-7 { bottom: 70px; left: 18px; font-size: 8px; opacity: 0.4; }
+  .deco-8 { bottom: 66px; right: 16px; font-size: 8px; opacity: 0.4; }
+  .deco-9 { top: 90px; left: 8px; font-size: 8px; opacity: 0.35; transform: rotate(-20deg); }
+  .deco-10 { top: 95px; right: 10px; font-size: 8px; opacity: 0.35; transform: rotate(15deg); }
+
+  /* Pixel heart decorations */
+  .pixel-hearts {
+    display: flex; gap: 3px; justify-content: center; margin-bottom: 2px;
+  }
+  .pixel-hearts span { font-size: 8px; }
+</style>
+<script>
+  function setScale() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    // Tamagotchi natural size ~320px tall, 280px wide
+    const scaleX = (vw * 0.88) / 280;
+    const scaleY = (vh * 0.88) / 360;
+    const scale = Math.min(scaleX, scaleY, 2.2); // cap at 2.2x
+    document.documentElement.style.setProperty('--tama-scale', Math.max(scale, 1).toFixed(3));
+  }
+  setScale();
+  window.addEventListener('resize', setScale);
+</script>
+</head>
+<body>
+<!-- Tap to start overlay -->
+<div id="start-overlay" style="
+  position:fixed;inset:0;z-index:9999;
+  background:#1a0a2eee;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:16px;cursor:pointer;
+" onclick="startGame()">
+  <div style="font-family:'Press Start 2P',monospace;color:#ff9de2;font-size:12px;text-align:center;line-height:2;text-shadow:0 0 10px #ff9de2;">✦ CRISHANA ✦</div>
+  <div style="font-family:'Press Start 2P',monospace;color:#ffb3e6;font-size:8px;animation:pulse 1s infinite;">TAP TO START</div>
+  <div style="font-size:32px;">🍼</div>
+</div>
+
+<div class="device-wrap">
+  <div class="device-name">✦ CRISHANA ✦</div>
+  <button id="music-btn" onclick="toggleMusic()" style="background:none;border:1px solid #ff9de2;border-radius:20px;color:#ff9de2;font-size:10px;padding:4px 10px;cursor:pointer;font-family:'Press Start 2P',monospace;letter-spacing:1px;">🔊 MUSIC</button>
+  <div class="shell">
+    <div class="chain-hole"></div>
+    <span class="deco deco-1">🌸</span>
+    <span class="deco deco-2">⭐</span>
+    <span class="deco deco-3">💗</span>
+    <span class="deco deco-4">💗</span>
+    <span class="deco deco-5">🐾</span>
+    <span class="deco deco-6">🐾</span>
+    <span class="deco deco-7">✦</span>
+    <span class="deco deco-8">✧</span>
+    <span class="deco deco-9">✨</span>
+    <span class="deco deco-10">✨</span>
+
+    <div class="screen-bezel">
+      <div class="screen" id="screen">
+
+        <!-- Menu overlay -->
+        <div class="menu" id="menu">
+          <div class="menu-title">MENU</div>
+          <button class="menu-item" onclick="playClick();doAction('feed')">🍼 FEED</button>
+          <button class="menu-item" onclick="playClick();doAction('play')">🎀 PLAY</button>
+          <button class="menu-item" onclick="playClick();doAction('bath')">🛁 BATH</button>
+          <button class="menu-item" onclick="playClick();doAction('sleep')">💤 SLEEP</button>
+          <button class="menu-item" onclick="playClick();doAction('clean')">🧹 CLEAN</button>
+          <button class="menu-item" onclick="playClick();closeMenu()">✖ CLOSE</button>
+        </div>
+
+        <!-- Floaties layer -->
+        <div class="floaties" id="floaties"></div>
+
+        <!-- Poop indicator -->
+        <div class="poop-layer" id="poop">💩</div>
+
+        <!-- Header -->
+        <div class="screen-header">
+          <span id="age-tag">AGE: 0</span>
+          <span id="alert-dot" class="alert-dot"></span>
+          <span id="time-tag">00:00</span>
+        </div>
+
+        <!-- Sprites -->
+        <div class="sprite-area">
+          <!-- sleeping -->
+          <img class="sprite active" id="sprite-sleep" src="https://i.imgur.com/ZkZOt2q.jpeg" alt="sleeping">
+          <!-- love eyes -->
+          <img class="sprite" id="sprite-love" src="https://i.imgur.com/EIidOdO.jpeg" alt="love">
+          <!-- crying -->
+          <img class="sprite" id="sprite-cry" src="https://i.imgur.com/OrRYBHk.jpeg" alt="crying">
+          <!-- hungry -->
+          <img class="sprite" id="sprite-hungry" src="https://i.imgur.com/RHM1i5n.jpeg" alt="hungry">
+          <!-- sick -->
+          <img class="sprite" id="sprite-sick" src="https://i.imgur.com/zYzpGsd.jpeg" alt="sick">
+          <!-- happy -->
+          <img class="sprite" id="sprite-happy" src="https://i.imgur.com/5IYk4Co.jpeg" alt="happy">
+          <!-- bath -->
+          <img class="sprite" id="sprite-bath" src="https://i.imgur.com/2s5GilJ.jpeg" alt="bath">
+          <!-- eating -->
+          <img class="sprite" id="sprite-poop" src="https://i.imgur.com/nsxq7zw.jpeg" alt="eating">
+          <!-- love2 (reuse love) -->
+          <img class="sprite" id="sprite-love2" src="https://i.imgur.com/EIidOdO.jpeg" alt="love2">
+        </div>
+
+        <!-- Status -->
+        <div class="status-msg" id="status-msg">Crishana is sleeping...</div>
+
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat-row">
+            <span class="stat-label">HUNGER</span>
+            <div class="stat-bar"><div class="stat-fill" id="bar-hunger" style="width:80%"></div></div>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">HAPPY</span>
+            <div class="stat-bar"><div class="stat-fill" id="bar-happy" style="width:80%"></div></div>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">CLEAN</span>
+            <div class="stat-bar"><div class="stat-fill" id="bar-clean" style="width:100%"></div></div>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">ENERGY</span>
+            <div class="stat-bar"><div class="stat-fill" id="bar-energy" style="width:60%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="buttons">
+      <button class="btn btn-a" onclick="playClick();openMenu()" title="Menu">
+        ☰
+        <span class="btn-label">MENU</span>
+      </button>
+      <button class="btn btn-b" onclick="playClick();doAction('play')" title="Play">
+        🎀
+        <span class="btn-label">PLAY</span>
+      </button>
+      <button class="btn btn-c" onclick="playClick();doAction('love')" title="Love">
+        💗
+        <span class="btn-label">LOVE</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<audio id="bgm" loop>
+  <source src="https://files.catbox.moe/vh99t7.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx-click">
+  <source src="https://files.catbox.moe/zs8zbc.wav" type="audio/wav">
+</audio>
+
+<script>
+const bgm = document.getElementById('bgm');
+const sfxClick = document.getElementById('sfx-click');
+
+let musicOn = false;
+
+function startGame() {
+  const overlay = document.getElementById('start-overlay');
+  overlay.style.display = 'none';
+  bgm.volume = 0.4;
+  bgm.play().then(() => {
+    musicOn = true;
+    document.getElementById('music-btn').textContent = '🔊';
+  }).catch(() => {});
+}
+
+function toggleMusic() {
+  if (!musicOn) {
+    bgm.volume = 0.4;
+    bgm.play().then(() => {
+      musicOn = true;
+      document.getElementById('music-btn').textContent = '🔊';
+    }).catch(() => {});
+  } else {
+    bgm.pause();
+    musicOn = false;
+    document.getElementById('music-btn').textContent = '🔇';
+  }
+}
+
+function playClick() {
+  sfxClick.currentTime = 0;
+  sfxClick.play().catch(()=>{});
+}
+
+const state = {
+  hunger: 80,
+  happy: 80,
+  clean: 100,
+  energy: 60,
+  age: 0,
+  sleeping: true,
+  dirty: false,
+  sick: false,
+  currentSprite: 'sleep',
+  animClass: '',
+  minutesSincePoop: 0,
+  birthdayTick: 0,
+};
+
+const sprites = ['sleep','love','cry','hungry','sick','happy','bath','poop','love2'];
+
+function showSprite(name, animClass='') {
+  sprites.forEach(s => {
+    const el = document.getElementById('sprite-' + s);
+    el.classList.remove('active','anim-bounce','anim-wobble','anim-shake','anim-pulse');
+  });
+  const el = document.getElementById('sprite-' + name);
+  el.classList.add('active');
+  if (animClass) el.classList.add(animClass);
+  state.currentSprite = name;
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function updateBars() {
+  const fields = ['hunger','happy','clean','energy'];
+  fields.forEach(f => {
+    const bar = document.getElementById('bar-' + f);
+    const val = state[f];
+    bar.style.width = val + '%';
+    bar.classList.toggle('low', val < 30);
+  });
+  document.getElementById('age-tag').textContent = 'AGE: ' + state.age;
+
+  // Alert if any stat low
+  const alert = state.hunger < 25 || state.happy < 25 || state.clean < 25 || state.energy < 15;
+  document.getElementById('alert-dot').classList.toggle('on', alert);
+}
+
+function spawnFloaty(emoji, count=3) {
+  const layer = document.getElementById('floaties');
+  for(let i=0;i<count;i++) {
+    setTimeout(()=>{
+      const d = document.createElement('div');
+      d.className = 'floaty';
+      d.textContent = emoji;
+      d.style.left = (20 + Math.random()*60) + '%';
+      d.style.bottom = '20%';
+      d.style.animationDelay = (Math.random()*0.3) + 's';
+      layer.appendChild(d);
+      setTimeout(()=>d.remove(), 2500);
+    }, i*200);
+  }
+}
+
+function openMenu() {
+  document.getElementById('menu').classList.add('open');
+}
+function closeMenu() {
+  document.getElementById('menu').classList.remove('open');
+}
+
+function doAction(action) {
+  closeMenu();
+  if (action === 'feed') {
+    if (state.sleeping) { setStatus('Wake her up first!'); return; }
+    state.hunger = Math.min(100, state.hunger + 30);
+    state.happy = Math.min(100, state.happy + 5);
+    showSprite('poop', 'anim-bounce');
+    setStatus('Yummy yummy!');
+    spawnFloaty('🍼');
+    setTimeout(returnToIdle, 2500);
+  } else if (action === 'play') {
+    if (state.sleeping) { setStatus('Shh... she\'s sleeping!'); return; }
+    if (state.hunger < 20) { showSprite('hungry','anim-shake'); setStatus('Too hungry to play!'); return; }
+    state.happy = Math.min(100, state.happy + 25);
+    state.energy = Math.max(0, state.energy - 15);
+    showSprite('love', 'anim-bounce');
+    setStatus('Weeee! So fun!');
+    spawnFloaty('⭐', 4);
+    setTimeout(returnToIdle, 2500);
+  } else if (action === 'bath') {
+    if (state.sleeping) { setStatus('Don\'t wake her!'); return; }
+    state.clean = Math.min(100, state.clean + 50);
+    state.dirty = false;
+    document.getElementById('poop').style.display = 'none';
+    showSprite('bath', 'anim-bounce');
+    setStatus('Splish splash!');
+    spawnFloaty('🫧', 4);
+    setTimeout(returnToIdle, 3000);
+  } else if (action === 'sleep') {
+    if (state.sleeping) {
+      // Wake up
+      state.sleeping = false;
+      state.energy = Math.min(100, state.energy + 40);
+      showSprite('happy','anim-bounce');
+      setStatus('Good morning!');
+      spawnFloaty('☀️', 2);
+      setTimeout(returnToIdle, 2000);
+    } else {
+      state.sleeping = true;
+      showSprite('sleep','');
+      setStatus('Crishana is sleeping...');
+    }
+  } else if (action === 'clean') {
+    if (!state.dirty) { setStatus('Already clean!'); return; }
+    state.clean = Math.min(100, state.clean + 40);
+    state.dirty = false;
+    document.getElementById('poop').style.display = 'none';
+    showSprite('happy','anim-bounce');
+    setStatus('All clean!');
+    spawnFloaty('✨',3);
+    setTimeout(returnToIdle, 2000);
+  } else if (action === 'love') {
+    if (state.sleeping) { spawnFloaty('💗',2); setStatus('Sweet dreams'); return; }
+    state.happy = Math.min(100, state.happy + 15);
+    showSprite('love2','anim-pulse');
+    setStatus('Crishana loves you!');
+    spawnFloaty('💗',5);
+    setTimeout(returnToIdle, 2500);
+  }
+  updateBars();
+}
+
+function returnToIdle() {
+  if (state.sleeping) {
+    showSprite('sleep');
+    setStatus('Crishana is sleeping...');
+    return;
+  }
+  if (state.sick) {
+    showSprite('sick','anim-wobble');
+    setStatus('Not feeling well...');
+    return;
+  }
+  if (state.dirty) {
+    showSprite('cry','anim-wobble');
+    document.getElementById('poop').style.display = 'block';
+    setStatus('Ewww... clean me!');
+    return;
+  }
+  if (state.hunger < 25) {
+    showSprite('hungry','anim-wobble');
+    setStatus('Hungry hungry!');
+    return;
+  }
+  if (state.happy < 25) {
+    showSprite('cry','anim-shake');
+    setStatus('I\'m sad... play with me');
+    return;
+  }
+  showSprite('happy','anim-bounce');
+  setStatus('Crishana is happy!');
+}
+
+// Clock display
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('time-tag').textContent = h+':'+m;
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// Game tick — every 8 seconds
+setInterval(() => {
+  if (!state.sleeping) {
+    state.hunger = Math.max(0, state.hunger - 3);
+    state.happy = Math.max(0, state.happy - 2);
+    state.clean = Math.max(0, state.clean - 1.5);
+    state.energy = Math.max(0, state.energy - 2);
+    state.minutesSincePoop += 1;
+
+    // Poop!
+    if (state.minutesSincePoop >= 8 && !state.dirty) {
+      state.dirty = true;
+      state.clean = Math.max(0, state.clean - 25);
+      state.minutesSincePoop = 0;
+    }
+
+    // Sick if both hunger and clean very low
+    if (state.hunger < 15 && state.clean < 15) {
+      state.sick = true;
+    } else {
+      state.sick = false;
+    }
+
+    // Auto sleep if very low energy
+    if (state.energy < 5 && !state.sleeping) {
+      state.sleeping = true;
+    }
+  } else {
+    state.energy = Math.min(100, state.energy + 3);
+    if (state.energy >= 100) {
+      state.sleeping = false;
+    }
+  }
+
+  // Age up
+  state.birthdayTick++;
+  if (state.birthdayTick >= 45) { // ~6 min = 1 age
+    state.birthdayTick = 0;
+    state.age++;
+    spawnFloaty('🎂',3);
+  }
+
+  updateBars();
+  if (state.currentSprite === 'sleep' && !state.sleeping) returnToIdle();
+  if (!['feed','play','bath','love'].includes(state.currentSprite)) returnToIdle();
+}, 8000);
+
+// Initial state
+updateBars();
+</script>
+</body>
+</html>
